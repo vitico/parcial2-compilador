@@ -1,0 +1,36 @@
+Arguments: 
+  C:\Users\vitic\AppData\Local\Temp\fnm_multishells\39680_1643513544754\node.exe C:\Users\vitic\.node\corepack\yarn\1.22.15\bin\yarn.js init
+
+PATH: 
+  C:\Users\vitic\AppData\Local\Temp\fnm_multishells\39680_1643513544754;C:\Users\vitic\anaconda3;C:\Users\vitic\anaconda3\Library\mingw-w64\bin;C:\Users\vitic\anaconda3\Library\usr\bin;C:\Users\vitic\anaconda3\Library\bin;C:\Users\vitic\anaconda3\Scripts;C:\Users\vitic\anaconda3\bin;C:\Users\vitic\anaconda3\condabin;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\VMware\VMware Workstation\bin;C:\Python310\Scripts;C:\Python310;C:\Program Files\Microsoft\jdk-11.0.12.7-hotspot\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\ProgramData\chocolatey\bin;C:\Program Files\Microsoft SQL Server\150\Tools\Binn;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn;C:\Program Files\dotnet;C:\Program Files (x86)\Microsoft SQL Server\150\DTS\Binn;C:\Program Files\Azure Data Studio\bin;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\Binn;C:\Program Files\Microsoft SQL Server\150\DTS\Binn;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files (x86)\Paragon Software\APFS for Windows;C:\Users\vitic\scoop\apps\oh-my-posh\current\bin;C:\Users\vitic\anaconda3;C:\Users\vitic\anaconda3\Library\mingw-w64\bin;C:\Users\vitic\anaconda3\Library\usr\bin;C:\Users\vitic\anaconda3\Library\bin;C:\Users\vitic\anaconda3\Scripts;C:\Users\vitic\scoop\shims;C:\Users\vitic\AppData\Local\Microsoft\WindowsApps;C:\Users\vitic\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\vitic\.dotnet\tools;C:\Program Files (x86)\GitHub CLI;C:\Users\vitic\.dotnet\tools;C:\Users\vitic\AppData\Local\Programs\oh-my-posh\bin;C:\Users\vitic\AppData\Local\Programs\oh-my-posh\themes;C:\Program Files\Tesseract-OCR;.;C:\Users\vitic\AppData\Local\Programs\Azure Data Studio\bin;C:\Program Files\Azure Data Studio\bin
+
+Yarn version: 
+  1.22.15
+
+Node version: 
+  16.13.1
+
+Platform: 
+  win32 x64
+
+Trace: 
+  Error: canceled
+      at Interface.<anonymous> (C:\Users\vitic\.node\corepack\yarn\1.22.15\lib\cli.js:137145:13)
+      at Interface.emit (node:events:390:28)
+      at Interface._ttyWrite (node:readline:1081:16)
+      at ReadStream.onkeypress (node:readline:288:10)
+      at ReadStream.emit (node:events:390:28)
+      at emitKeys (node:internal/readline/utils:358:14)
+      at emitKeys.next (<anonymous>)
+      at ReadStream.onData (node:internal/readline/emitKeypressEvents:61:36)
+      at ReadStream.emit (node:events:390:28)
+      at addChunk (node:internal/streams/readable:315:12)
+
+npm manifest: 
+  No manifest
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
