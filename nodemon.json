@@ -1,0 +1,13 @@
+{
+  "verbose": true,
+  "ext": "ts,g4,js,html",
+  "ignore": [
+    "./src/grammar/generated/",
+    "./dist/"
+  ],
+  "execMap": {
+    "g4": "echo g4",
+    "ts": "echo ts"
+  },
+  "exec": "yarn build"
+}

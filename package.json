@@ -1,14 +1,46 @@
 {
   "name": "intentoLexAnalyser",
   "packageManager": "yarn@3.1.1",
-  "type": "module",
+  "private": true,
   "dependencies": {
-    "antlr4": "^4.9.3",
+    "@babel/preset-flow": "^7.16.7",
+    "@babel/runtime": "^7.17.2",
+    "antlr4": "4.9.3",
+    "connect": "^3.7.0",
+    "core-js": "3",
+    "livereload": "^0.9.3",
+    "micro": "^9.3.4",
+    "monaco-editor": "^0.32.1",
+    "nodemon": "^2.0.15",
+    "npm-run-all": "^4.1.5",
     "print-tree": "^0.1.5",
-    "webpack": "^5.67.0"
+    "serve-handler": "^6.1.3",
+    "serve-static": "^1.14.2"
   },
   "scripts": {
-    "start": "yarn node src/index.js",
-    "grammar:generate": "java -jar ./antlr-4.9.3-complete.jar -Dlanguage=JavaScript -o ./src/grammar/ ./src/grammar/Hello.g4  "
+    "start": "node app.js",
+    "dev": "npm-run-all --parallel nodemon start",
+    "nodemon": "nodemon",
+    "build": "npm-run-all --sequential grammar:generate webpack",
+    "antlr4ts": "antlr4ts -visitor src/grammar/Spreadsheet.g4 -o ./src/grammar/generated/",
+    "grammar:generate": "java -jar ./antlr-4.9.3-complete.jar -visitor -Dlanguage=JavaScript -o ./src/grammar/generated/ ./src/grammar/Spreadsheet.g4  ",
+    "webpack": "webpack --config webpack.config.js",
+    "serve": "webpack serve --open"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.17.5",
+    "@babel/preset-env": "^7.16.11",
+    "antlr4-webpack-loader": "^0.1.1",
+    "babel-loader": "^8.2.3",
+    "css-loader": "^6.6.0",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.0",
+    "monaco-editor-webpack-plugin": "^7.0.1",
+    "source-map-loader": "^3.0.1",
+    "style-loader": "^3.3.1",
+    "tmp": "^0.2.1",
+    "webpack": "^5.69.1",
+    "webpack-cli": "^4.9.2",
+    "webpack-dev-server": "^4.7.4"
   }
 }
