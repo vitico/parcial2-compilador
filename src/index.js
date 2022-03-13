@@ -109,7 +109,7 @@ monaco.languages.registerDocumentSemanticTokensProvider("calc", {
       monaco.editor.setModelMarkers(model, "calc", parsed);
       // console.log("set markeds", parsed);
       resolve({
-        data: data,
+        data: [],
         resultId: null
       });
 
