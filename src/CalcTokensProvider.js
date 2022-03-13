@@ -16,7 +16,6 @@ export class CalcState implements IState {
   equals(other: monaco.languages.IState): boolean {
     return true;
   }
-
 }
 
 
@@ -75,8 +74,9 @@ export function tokensForLine(input: string): ILineTokens {
   } while (!done);
 
   for (let e of errorStartingPoints) {
-    myTokens.push(new CalcToken("error.calc", e))
+    // myTokens.push(new CalcToken("error", e))
   }
   myTokens.sort((a, b) => a.startIndex > b.startIndex ? 1 : -1)
+  console.log("myTokens", myTokens);
   return new CalcLineTokens(myTokens)
 }

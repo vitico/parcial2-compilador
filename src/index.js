@@ -4,11 +4,11 @@ import MyLexer from "./grammar/generated/SpreadsheetLexer"
 import MyParser from "./grammar/generated/SpreadsheetParser"
 // @ts-ignore
 import print from "print-tree";
-import SpreadsheetVisitor from "./grammar/SpreadsheetVisitor";
+import SpreadsheetVisitor, {nodeToJavascriptCode} from "./grammar/SpreadsheetVisitor";
 import {CalcTokensProvider} from "./CalcTokensProvider";
 import * as monaco from "monaco-editor";
 import {CancellationToken} from "monaco-editor";
-import {getSemanticAnalisys, transformNodeToMermaidjsGraph} from "./utils";
+import {getSemanticAnalisys, parseTreeStr, transformNodeToMermaidjsGraph} from "./utils";
 import {CollectorErrorListener, Error} from "./grammar/ErrorListener";
 
 let input = `
@@ -19,7 +19,7 @@ string c;
 #string f=false;
 d = true;
 if (b == 4)
-    a = a*a*a
+    a = a*a*a;
 endif
 `
 let prueba = false
@@ -70,18 +70,18 @@ print b;`
 self.MonacoEnvironment = {
   getWorkerUrl: function (moduleId, label) {
     if (label === 'json') {
-      return './json.worker.bundle.js';
+      return './scripts/json.bundle.js';
     }
     if (label === 'css' || label === 'scss' || label === 'less') {
-      return './css.worker.bundle.js';
+      return './scripts/css.bundle.js';
     }
     if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return './html.worker.bundle.js';
+      return './scripts/html.bundle.js';
     }
     if (label === 'typescript' || label === 'javascript') {
-      return './ts.worker.bundle.js';
+      return './scripts/ts.bundle.js';
     }
-    return './editor.worker.bundle.js';
+    return './scripts/editor.bundle.js';
   }
 };
 
@@ -116,6 +116,7 @@ monaco.languages.registerDocumentSemanticTokensProvider("calc", {
       lexer.removeErrorListeners();
       // lexer.addErrorListener(collector);
       const tokens = new antlr4.CommonTokenStream(lexer);
+
       const parser = new MyParser(tokens);
       parser.removeErrorListeners();
       parser.addErrorListener(collector);
@@ -124,29 +125,6 @@ monaco.languages.registerDocumentSemanticTokensProvider("calc", {
       visitor.visitProgram(tree);
       //TODO: add syntax errors
 
-      // console.log("result", visitor.errors);
-      const data: number[] = [];
-      // translate the result into the format expected by the monaco-editor
-      let curLine = 0;
-      let curChar = 0;
-      for (let i = 0; i < visitor.errors.length; i++) {
-        const token = visitor.errors[i];
-        // console.log("token", token);
-        // add to data the translated token in the format expected by the monaco-editor that is:
-        // [delta line, delta column, length, type index, modifier]
-        let parsed = [
-          Math.max(token.line - curLine, 0),
-          curLine === token.line ? token.column - curChar : token.column,
-          token.length + 1,
-          0,
-          0
-        ];
-        data.push(...parsed)
-        // console.log("parsed", parsed);
-        curLine = token.line;
-        curChar = token.column;
-
-      }
 
       // paser errors to monaco-editor format
       let parsed = visitor.errors.map(error => ({
@@ -167,7 +145,7 @@ monaco.languages.registerDocumentSemanticTokensProvider("calc", {
       monaco.editor.setModelMarkers(model, "calc", parsed);
       // console.log("set markeds", parsed);
       resolve({
-        data: [],
+        data: data,
         resultId: null
       });
       // monaco.editor.mar
@@ -221,14 +199,14 @@ monaco.languages.registerDocumentSemanticTokensProvider("calc", {
   }
 
 })
-let literalFg = 'c97632';
-let commentFg = '828282';
-let idFg = '344482';
-let symbolsFg = 'ff0000';
+let literalFg = '#c97632';
+let commentFg = '#828282';
+let idFg = '#344482';
+let symbolsFg = '#ff0000';
 let stringFg = "658156"
-let keywordFg = '7132a8';
-let errorFg = 'ff0000';
-let numbersFg = "4c75ba"
+let keywordFg = '#7132a8';
+let errorFg = '#ff0000';
+let numbersFg = '#4c75ba'
 monaco.editor.defineTheme('myCoolTheme', {
   base: 'vs',
   inherit: true,
@@ -273,29 +251,118 @@ let editor = monaco.editor.create(document.getElementById('container'), {
 
   "semanticHighlighting.enabled": true
 });
+let typesEditor = monaco.editor.create(document.getElementById('types-editor'), {
+  language: 'json',
+  theme: 'myCoolTheme',
+  readOnly: true,
+});
+let astEditor = monaco.editor.create(document.getElementById('ast-editor'), {
+  language: 'json',
+  theme: 'myCoolTheme',
+  readOnly: true,
+});
+let tokensEditor = monaco.editor.create(document.getElementById('tokens-editor'), {
+  language: 'json',
+  theme: 'myCoolTheme',
+  readOnly: true,
+})
+let resultEditor = monaco.editor.create(document.getElementById('result-editor'), {
+  language: 'javascript',
+  theme: 'myCoolTheme',
+  readOnly: true,
+})
 
-function doParse(input: string) {
-  let code = input;
-  let result = getSemanticAnalisys(code);
-  //transform the result to mermaid syntax
-  let mermaidGraph = transformNodeToMermaidjsGraph(result);
-  mermaid.mermaidAPI.render('graphDiv', mermaidGraph, svg => {
-    document.getElementById('result').innerHTML = svg;
-    // store in a Blob
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    // create an URI pointing to that blob
-    const url = URL.createObjectURL(blob);
-    const win = open(url);
-    // so the Garbage Collector can collect the blob
-    win.onload = (evt) => URL.revokeObjectURL(url);
-  });
-
-
-}
 
 $(document).ready(function () {
+  let idEmbedContainer = "ast-content"
+  function createNewEmbed(src, callback = () => {
+  }) {
+    var embed = document.createElement('embed');
+    embed.setAttribute('style', 'width: 500px; height: 500px; border:1px solid black;');
+    embed.setAttribute('type', 'image/svg+xml');
+    embed.setAttribute('src', src);
+    document.getElementById(idEmbedContainer).appendChild(embed)
+
+    function onLoad() {
+      lastEmbed = svgPanZoom(embed, {
+        zoomEnabled: true,
+        controlIconsEnabled: true
+      });
+      callback();
+      // embed.removeEventListener("load", onLoad)
+    }
+
+    embed.addEventListener('load', onLoad)
+
+    return embed
+  }
+
+  let lastEmbed = null;
+
+  function removeEmbed() {
+    lastEmbed?.destroy()
+    // Remove embed element
+    document.getElementById(idEmbedContainer).innerHTML = '';
+    // Null reference to embed
+    lastEmbed = null
+  }
+
   $('#btn').click(function () {
     doParse(editor.getValue());
   });
+
+  function doParse(input: string) {
+    let code = input;
+    let tree = parseTreeStr(input);
+    let [ast, types, tokens] = getSemanticAnalisys(code);
+    tokens = tokens.map((token: { type: number, text: string }) => ({
+      type: MyParser.symbolicNames[token.type],
+      text: token.text,
+    }));
+    tokensEditor.setValue(JSON.stringify(tokens, replacer, 2));
+    typesEditor.setValue(JSON.stringify(Array.from(types.entries()), replacer, 2));
+    astEditor.setValue(JSON.stringify(ast, replacer, 2));
+
+    function replacer(key, value) {
+      if (value instanceof Map) {
+        return {
+          value: Array.from(value.entries()), // or with spread: value: [...value]
+        };
+      } else {
+        return value;
+      }
+    }
+
+    let resultCode = js_beautify(nodeToJavascriptCode(ast));
+    resultEditor.setValue(resultCode);
+// debugger;
+    //transform the result to mermaid syntax
+    let mermaidGraph = transformNodeToMermaidjsGraph(ast);
+    let text = mermaid.mermaidAPI.render('nonexistant', mermaidGraph, svg => {
+      removeEmbed();
+      // store in a Blob
+      const blob = new Blob([svg], {type: "image/svg+xml"});
+      // // create an URI pointing to that blob
+      const url = URL.createObjectURL(blob);
+
+      createNewEmbed(url,()=>URL.revokeObjectURL(url));
+
+
+    }, document.getElementById("graphDiv"));
+    // get element with id "modal-ast" and remove class "d-none"
+    $('#modal-ast').removeClass('d-none');
+    codeGenerated = true;
+
+  }
+  let codeGenerated = false;
+  $("#btn-ast-dialog-ok").on('click',()=>{
+    $('#modal-ast').addClass('d-none');
+  });
+  $("#btn-ast").on('click',function(event){
+    event.preventDefault();
+    if(!codeGenerated) return;
+    $('#modal-ast').removeClass('d-none');
+
+  })
   // doParse(input);
 });

@@ -47,6 +47,63 @@ export class Node {
   }
 }
 
+export function nodeToJavascriptCode(node: Node) {
+  let code = "";
+  if (node.type === "value") {
+    let type = node.children.get("type");
+    let value = node.children.get("value");
+    switch (type) {
+      case "int":
+      case "boolean":
+      case "string":
+        code += value;
+        break;
+      case "identifier":
+        code += value;
+        break;
+    }
+  } else if (node.type === "declaration") {
+    code += "var " + node.value;
+    if (node.children.has("assign")) {
+      code += " = " + nodeToJavascriptCode(node.children.get("assign").children.get("value"));
+    }
+    code += ";\n";
+  } else if (node.type === "assign") {
+    code += node.value + " = " + nodeToJavascriptCode(node.children.get("value")) + ";\n";
+  } else if (node.type === "identifier") {
+    code += node.value;
+  } else if (node.type === "function") {
+    code += `${node.value}(${node.children.get("arguments").map(nodeToJavascriptCode).join(", ")})`;
+  } else if (node.type === "operator") {
+    code += nodeToJavascriptCode(node.children.get("left")) + " " + node.value + " " + nodeToJavascriptCode(node.children.get("right"));
+    // code += `${node.value}(${node.children.get("operands").map(nodeToJavascriptCode).join(", ")})`;
+  } else if (node.type === "if") {
+    code += `if (${nodeToJavascriptCode(node.children.get("condition"))}) {\n`;
+    code += node.children.get("statements").map(nodeToJavascriptCode).join("");
+    code += "}\n";
+  } else if (node.children && node.children.size > 0) {
+    // loop all childrens
+    for (let child of node.children.values()) {
+      if (Array.isArray(child)) {
+        for (let childNode of child) {
+          code += nodeToJavascriptCode(childNode);
+        }
+      } else {
+        code += nodeToJavascriptCode(child)
+      }
+    }
+    // code += node.children.forEach(nodeToJavascriptCode);
+  } else if (typeof node === "string") {
+    code += node;
+  } else if (Array.isArray(node)) {
+    for (let child of node) {
+      code += nodeToJavascriptCode(child);
+    }
+
+  }
+  return code;
+}
+
 export default class SpreadsheetVisitor extends BaseVisitor {
 
   types = new Map<string, string>()
@@ -153,7 +210,7 @@ export default class SpreadsheetVisitor extends BaseVisitor {
             `Type mismatch2: ${this.types.get(name)} and ${valueType}`));
       }
     } else {
-      if(valueType === "undefined") {
+      if (valueType === "undefined") {
         this.errors.push(new Error(ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column,
           `cant assign ${valueType} to ${name}`));
         return node;
@@ -162,7 +219,9 @@ export default class SpreadsheetVisitor extends BaseVisitor {
       let declaration = new Node("declaration", name, ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column);
       declaration.children.set("type", valueType);
       declaration.children.set("name", name);
-      return [declaration, node]
+      declaration.children.set("assign", node);
+      console.log("assign", node);
+      return declaration;
     }
 
     return node;
@@ -214,7 +273,7 @@ export default class SpreadsheetVisitor extends BaseVisitor {
     }
 
     // return op, left, right
-    let node = new Node(op, op, ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column);
+    let node = new Node("operator", op, ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column);
     node.children.set("left", left);
     // node.children.set("op", op);
     node.children.set("right", right);
@@ -252,13 +311,22 @@ export default class SpreadsheetVisitor extends BaseVisitor {
     if (ctx.identifier()) {
       return this.visitIdentifier(ctx.identifier())
     } else if (ctx.INTEGER()) {
-      return parseInt(text)
+      return new Node("value", text, ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column, new Map<string, Node | Node[] | string>([
+        ["value", text],
+        ["type", "int"]
+      ]));
     } else if (ctx.STRING()) {
       // get text from ctx.STRING() and return it without the quotes
       text = getText(ctx.STRING());
-      return text.substring(1, text.length - 1);
+      return new Node("value", text.substring(1, text.length - 1), ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column, new Map<string, Node | Node[] | string>([
+        ["value", text],
+        ["type", "string"]
+      ]));
     } else if (ctx.BOOLEAN()) {
-      return text === "true"
+      return new Node("value", text === "true", ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column, new Map<string, Node | Node[] | string>([
+        ["value", text],
+        ["type", "boolean"]
+      ]));
     } else {
       this.errors.push(new Error(ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column,
         `Unexpected term type`));
@@ -289,12 +357,13 @@ export default class SpreadsheetVisitor extends BaseVisitor {
     }
 
     // if assign exists, visit assignstmt and return the result
-    if (ctx.assignstmt()) {
-      return this.visitAssignstmt(ctx.assignstmt())
-    }
     let node = new Node("declaration", name, ctx.start.line, ctx.start.column, ctx.stop.column - ctx.start.column);
     node.children.set("type", type);
     node.children.set("name", name);
+    if (ctx.assignstmt()) {
+      node.children.set("assign", this.visitAssignstmt(ctx.assignstmt()));
+    }
+
     return node //TODO: verify if this is correct
     /*old code:
     // BaseVisitor.
