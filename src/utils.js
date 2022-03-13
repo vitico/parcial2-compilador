@@ -68,16 +68,15 @@ export function getSemanticAnalisys(input: string): Node {
   const lexer = createLexer(input);
   lexer.removeErrorListeners();
   lexer.addErrorListener(new MyErrorListener());
-
-  const parser = createParserFromLexer(lexer);
+  const tokens = new CommonTokenStream(lexer)
+  const parser = new SpreadsheetParser(tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new MyErrorListener());
 
   const tree = parser.program();
   const visitor = new SpreadsheetVisitor();
   let result = visitor.visit(tree);
-  console.log(visitor.types);
-  return result;
+  return [result,visitor.types,tokens.tokens];
 }
 
 function getConnector(comment: string = "") {
@@ -105,7 +104,6 @@ function nodeToGraph(node: Node | Node[] | string, preprend: string = "", addTo:
     // finalStr += nodeToGraph(node.left, preprend + "0", addTo + "0");
     // finalStr += nodeToGraph(node.right, preprend + "1", addTo + "1");
   }
-  console.log("node:", {node, preprend, addTo, finalStr});
   for (let key of node.children.keys()) {
     finalStr += nodeToGraph(node.children.get(key), preprend + "_" + key + "_", preprend, key);
   }
@@ -124,8 +122,6 @@ export function transformNodeToMermaidjsGraph(program: Node): string {
   // graph += nodeToGraph(program);
   // graph += `${node.toMermaidjsGraph()}\n`;
   // return a mock graph
-  console.log({graph, node: program});
-  console.log(graph)
   return graph;
   // return graph;
 }

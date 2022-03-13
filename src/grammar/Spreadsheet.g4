@@ -6,7 +6,6 @@ program: statement* EOF;
 statement: ifstmt | printstmt | assignstmt | declaration | LINECOMMENT;
 
 // Parse rule for variable declarations
-
 declaration:
     TYPE NAME SEMICOLON
     | TYPE assignstmt
